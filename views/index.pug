@@ -1,0 +1,14 @@
+extends layout.pug
+
+block content
+  h1 Bienvenido al Sistema Hospitalario HIS
+  p Esta es la página principal 
+  p Utiliza el menú de navegación para acceder a las funcionalidades
+
+  .call-to-action
+    h2 ¿Qué deseas hacer?
+    ul
+      li
+        a(href="/admisiones/nueva") Realizar una Nueva Admisión
+      li
+        a(href="/admisiones/activas") Ver Admisiones Activas
