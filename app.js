@@ -19,9 +19,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (req, res) => {
    
     const datosPaginaInicio = {
-        titulo: 'Mi Sitio Web con Pug y Express (Solo Vistas)',
-        mensajeBienvenida: '¡Bienvenido a la página de inicio de tu HIS!',
-        nombreUsuario: 'Paciente Demo'
+        titulo: '',
+        mensajeBienvenida: '¡Bienvenido a la página de inicio de HIS!',
+        nombreUsuario: 'Paciente'
     };
     
     res.render('index', datosPaginaInicio);
@@ -65,9 +65,9 @@ app.get('/admisiones/activas', (req, res) => {
 
 // Iniciar el servidor
 app.listen(port, () => {
-    console.log(`Servidor Express (solo vistas) escuchando en http://localhost:${port}`);
-    console.log(`Visita la página de inicio en http://localhost:${port}`);
-    console.log(`Visita la página "Acerca de" en http://localhost:${port}/acerca`);
-    console.log(`Previsualiza el formulario de admisión en http://localhost:${port}/admisiones/nueva`);
-    console.log(`Previsualiza la lista de admisiones en http://localhost:${port}/admisiones/activas`);
+    console.log(`Servidor Express escuchando en http://localhost:${port}`);
+    console.log(`pgina de inicio en http://localhost:${port}`);
+    
+    console.log(`Previsualizar el formulario de admisión en http://localhost:${port}/admisiones/nueva`);
+    console.log(`Previsualizar la lista de admisiones en http://localhost:${port}/admisiones/activas`);
 });
