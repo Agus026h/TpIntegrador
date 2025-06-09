@@ -1,6 +1,7 @@
 
 const express = require('express');
 const path = require('path'); 
+const { sequelize } = require('./models');
 const app = express();
 const port = 3000;
 
@@ -62,12 +63,25 @@ app.get('/admisiones/activas', (req, res) => {
 
 
 
-
-// Iniciar el servidor
-app.listen(port, () => {
+sequelize.sync({forse: false})
+    .then(()=>{
+    console.log('conexion a la bd establecida');
+    //iniciamos el server
+    app.listen(port, () => {
     console.log(`Servidor Express escuchando en http://localhost:${port}`);
     console.log(`pgina de inicio en http://localhost:${port}`);
     
     console.log(`Previsualizar el formulario de admisión en http://localhost:${port}/admisiones/nueva`);
     console.log(`Previsualizar la lista de admisiones en http://localhost:${port}/admisiones/activas`);
-});
+    });
+
+
+    })
+    .catch(err =>{
+    console.error('error al acceder a la base de datos')
+
+
+    });
+
+
+
