@@ -66,11 +66,7 @@ function validatePaciente(req, res, next) {
 
     if (errors.length > 0) {
         console.log('ValidationPaciente errors:', errors);
-        // Utiliza la función auxiliar para re-renderizar el formulario en caso de error
-        // Aquí deberías re-renderizar un formulario de paciente, no de admisión,
-        // o si es la misma vista, asegúrate que renderAdmisionFormWithError maneja bien esto.
-        // Pero idealmente, esta validación se usa en /pacientes/nuevo.
-        // Por simplicidad, si es el mismo form, se reusa la función:
+        
         return renderAdmisionFormWithError(req, res, errors);
     }
     next();
@@ -101,6 +97,6 @@ async function validateAdmision(req, res, next) {
 }
 
 module.exports = {
-    validatePaciente, // <-- Ahora sí existe esta función
+    validatePaciente, 
     validateAdmision
 };
