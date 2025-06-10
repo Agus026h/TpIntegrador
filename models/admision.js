@@ -13,10 +13,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false 
     },
-    id_personal_admision: { 
-      type: DataTypes.INTEGER,
-      allowNull: false
-    },
+    
     fecha: {
       type: DataTypes.DATEONLY,
       allowNull: false

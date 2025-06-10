@@ -1,0 +1,152 @@
+const db = require('../config/db');
+const camaUtils = require('../models/camaUtils.js'); 
+
+
+async function renderAdmisionFormWithError(req, res, errorMessages, paciente = null, linkRegistroPaciente = null) {
+    let pacienteRecuperado = paciente;
+    
+    if (!pacienteRecuperado && req.body.dni) {
+        try {
+            pacienteRecuperado = await db.Paciente.findOne({ where: { dni: req.body.dni } });
+        } catch (err) {
+            console.error('Error al intentar recuperar paciente para re-renderizar formulario:', err);
+        }
+    }
+
+    
+    let camasDisponibles = [];
+    try {
+        camasDisponibles = await camaUtils.getCamasDisponibles();
+    } catch (err) {
+        console.error('Error al cargar camas disponibles para re-renderizar el formulario:', err);
+        
+    }
+
+    res.status(400).render('admision/nueva_admision', {
+        titulo: 'Nueva Admisión de Paciente',
+        error: errorMessages.join('<br>'),
+        linkRegistroPaciente: linkRegistroPaciente,
+        paciente: pacienteRecuperado,
+        camasDisponibles: camasDisponibles, 
+        formData: req.body
+    });
+}
+
+
+
+async function mostrarFormularioNuevaAdmision(req, res) {
+    try {
+        console.log('DEBUG: Entrando a mostrarFormularioNuevaAdmision.'); 
+        const camasDisponibles = await camaUtils.getCamasDisponibles();
+        console.log('DEBUG: Camas disponibles cargadas:', camasDisponibles.length); 
+        res.render('admision/nueva_admision', {
+            titulo: 'Nueva Admisión de Paciente',
+            paciente: null,
+            camasDisponibles: camasDisponibles,
+            formData: {}
+        });
+        console.log('DEBUG: Formulario de admisión renderizado.'); 
+    } catch (error) {
+        console.error('ERROR CRÍTICO en mostrarFormularioNuevaAdmision:', error); 
+        res.status(500).send('Error interno del servidor al cargar el formulario de admisión.'); 
+    }
+}
+
+
+async function buscarPacientePorDNI(req, res) {
+    let { dni } = req.body;
+    let paciente = null;
+    let error = null;
+    let linkRegistroPaciente = null;
+
+    try {
+        paciente = await db.Paciente.findOne({ where: { dni: dni } });
+        if (!paciente) {
+            error = 'Paciente con DNI ' + dni + ' no encontrado. Haz clic';
+            linkRegistroPaciente = '/pacientes/nuevo';
+        }
+    } catch (err) {
+        console.error('Error al buscar paciente:', err);
+        error = 'Error al buscar paciente.';
+    }
+
+    
+    let camasDisponibles = [];
+    try {
+        camasDisponibles = await camaUtils.getCamasDisponibles();
+    } catch (err) {
+        console.error('Error al cargar camas disponibles para renderizar el formulario:', err);
+        error = (error ? error + '<br>' : '') + 'Error al cargar camas disponibles.';
+    }
+
+    res.render('admision/nueva_admision', {
+        titulo: 'Nueva Admisión de Paciente',
+        paciente: paciente,
+        error: error,
+        linkRegistroPaciente: linkRegistroPaciente,
+        camasDisponibles: camasDisponibles, 
+        formData: req.body 
+    });
+}
+
+
+async function crearNuevaAdmision(req, res, next) {
+    let {
+        dni, id_cama, motivo, tipo_ingreso
+    } = req.body;
+
+    console.log('1. Iniciando crearNuevaAdmision para DNI:', dni);
+
+    let transaction;
+
+    try {
+        transaction = await db.sequelize.transaction();
+        console.log('2. Transacción iniciada con ID:', transaction.id);
+
+        const paciente = await db.Paciente.findOne({ where: { dni: dni }, transaction });
+        console.log('3. Paciente encontrado:', paciente ? paciente.id_paciente : 'No encontrado');
+
+        if (!paciente) {
+            console.log('ERROR: Paciente no encontrado, lanzando error para re-renderizar.');
+            await transaction.rollback(); 
+            
+            return renderAdmisionFormWithError(req, res, ['Paciente no encontrado para la admisión. Regístrelo primero.'], null, '/pacientes/nuevo');
+        }
+
+        const nuevaAdmision = await db.Admision.create({
+            id_paciente: paciente.id_paciente,
+            id_cama: id_cama,
+            fecha: new Date(),
+            motivo: motivo,
+            tipo_ingreso: tipo_ingreso,
+            estado: 'activa'
+        }, { transaction });
+        console.log('4. Nueva admisión creada (ID):', nuevaAdmision.id_admision, 'Tipo Ingreso:', nuevaAdmision.tipo_ingreso);
+
+        await camaUtils.actualizarEstadoCama(id_cama, 'ocupada', transaction);
+        console.log(`5. Estado de la cama ${id_cama} actualizado a 'ocupada'.`);
+
+        await transaction.commit();
+        console.log('6. Transacción commiteada. Redirigiendo...');
+
+        res.redirect('/admisiones/activas?exito=true');
+        console.log('7. Redirección enviada.');
+
+    } catch (error) {
+        console.error('ERROR en crearNuevaAdmision (capturado en catch):', error);
+        if (transaction) {
+            console.log('ERROR: Realizando rollback de la transacción con ID:', transaction.id);
+            await transaction.rollback();
+        }
+
+        
+        await renderAdmisionFormWithError(req, res, [error.message || 'Error al procesar la admisión. Por favor, revise los datos.']);
+    }
+}
+
+
+module.exports = {
+    mostrarFormularioNuevaAdmision,
+    buscarPacientePorDNI,
+    crearNuevaAdmision
+};
