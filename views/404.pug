@@ -1,0 +1,11 @@
+extends layout.pug
+
+block content 
+  .container 
+    h1 404 - Página no Encontrada
+    p Lo sentimos, la página que estás buscando no existe.
+
+    if message
+      p #{message}
+
+    a(href="/") Volver al inicio

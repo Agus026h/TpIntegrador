@@ -1,0 +1,51 @@
+extends ../layout.pug 
+
+block content
+  .container
+    h1 Registrar Nuevo Paciente
+
+    if error
+      .alert.alert-danger #{error}
+    if mensajeExito
+      .alert.alert-success #{mensajeExito}
+
+    form(action="/pacientes/nuevo", method="POST")
+      .card.mb-3
+        .card-header Datos Personales del Paciente
+        .card-body
+          .mb-3
+            label.form-label(for="dni") DNI (requerido):
+            input.form-control(type="text", id="dni", name="dni", value=(formData && formData.dni) ? formData.dni : '', required)
+          .mb-3
+            label.form-label(for="nombre") Nombre (requerido):
+            input.form-control(type="text", id="nombre", name="nombre", value=(formData && formData.nombre) ? formData.nombre : '', required)
+          .mb-3
+            label.form-label(for="apellido") Apellido (requerido):
+            input.form-control(type="text", id="apellido", name="apellido", value=(formData && formData.apellido) ? formData.apellido : '', required)
+          .mb-3
+            label.form-label(for="fecha_nacimiento") Fecha de Nacimiento (requerido):
+            input.form-control(type="date", id="fecha_nacimiento", name="fecha_nacimiento", value=(formData && formData.fecha_nacimiento) ? formData.fecha_nacimiento.toISOString().split('T')[0] : '', required)
+          .mb-3
+            label.form-label(for="sexo") Sexo (requerido):
+            select.form-select(id="sexo", name="sexo", required)
+              option(value="") Seleccionar
+              option(value="m", selected=(formData && formData.sexo === 'm')) Masculino
+              option(value="f", selected=(formData && formData.sexo === 'f')) Femenino
+              option(value="otro", selected=(formData && formData.sexo === 'otro')) Otro
+          .mb-3
+            label.form-label(for="direccion") Dirección:
+            input.form-control(type="text", id="direccion", name="direccion", value=(formData && formData.direccion) ? formData.direccion : '')
+          .mb-3
+            label.form-label(for="telefono") Teléfono:
+            input.form-control(type="text", id="telefono", name="telefono", value=(formData && formData.telefono) ? formData.telefono : '')
+          .mb-3
+            label.form-label(for="email") Email (requerido):
+            input.form-control(type="email", id="email", name="email", value=(formData && formData.email) ? formData.email : '', required)
+          .mb-3
+            label.form-label(for="contacto_emergencia") Contacto de Emergencia (Nombre y Teléfono):
+            input.form-control(type="text", id="contacto_emergencia", name="contacto_emergencia", value=(formData && formData.contacto_emergencia) ? formData.contacto_emergencia : '')
+
+      button.btn.btn-success(type="submit") Registrar Paciente
+
+    p.mt-3
+      a(href="/admisiones/nueva") Volver a Admisiones
