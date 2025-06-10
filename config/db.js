@@ -10,35 +10,36 @@ dotenv.config();
 const DB_DATABASE = process.env.DB_DATABASE;
 const DB_USER = process.env.DB_USER;
 const DB_PASSWORD = process.env.DB_PASSWORD;
-const DB_HOST = process.env.DB_HOST || 'localhost'; 
-const DB_PORT = process.env.DB_PORT || 3306; 
+const DB_HOST = process.env.DB_HOST || 'localhost';
+const DB_PORT = process.env.DB_PORT || 3306;
 
 
 const sequelize = new Sequelize(DB_DATABASE, DB_USER, DB_PASSWORD, {
   host: DB_HOST,
   port: DB_PORT,
-  dialect: 'mysql', 
-  logging: console.log, 
+  dialect: 'mysql',
+  logging: console.log,
   dialectOptions: {
     
   },
   timezone: '-03:00' 
 });
 
-const db = {}; 
+const db = {};
 
 
 const modelsDir = path.join(__dirname, '../models');
 
-
+// Lee todos los archivos en el directorio models
 fs.readdirSync(modelsDir)
   .filter(file => {
     
+    
     return (
-      file.indexOf('.') !== 0 &&
-      file !== 'index.js' && 
-      file.slice(-3) === '.js' &&
-      !file.endsWith('Model.js') 
+      file.indexOf('.') !== 0 && 
+      file !== 'index.js' &&     
+      file.slice(-3) === '.js' && 
+      !file.endsWith('Utils.js')  
     );
   })
   .forEach(file => {
@@ -47,7 +48,7 @@ fs.readdirSync(modelsDir)
     db[model.name] = model; 
   });
 
-
+// Establecer asociaciones entre los modelos
 
 Object.keys(db).forEach(modelName => {
   if (db[modelName].associate) {
@@ -58,7 +59,7 @@ Object.keys(db).forEach(modelName => {
 
 async function testConnection() {
   try {
-    await sequelize.authenticate(); 
+    await sequelize.authenticate(); // Prueba la conexion
     console.log('Conexión a MySQL con Sequelize exitosa!');
 
     
@@ -67,7 +68,7 @@ async function testConnection() {
 
   } catch (error) {
     console.error('Error al conectar a la base de datos o sincronizar modelos:', error);
-    
+   
     process.exit(1);
   }
 }
@@ -75,7 +76,6 @@ async function testConnection() {
 
 db.sequelize = sequelize; 
 db.Sequelize = Sequelize; 
-
 db.testConnection = testConnection; 
 
 module.exports = db; 

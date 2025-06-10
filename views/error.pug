@@ -1,0 +1,12 @@
+extends layout.pug 
+
+block content
+  .container
+    h1 Error del Servidor
+    p Lamentamos las molestias. Ha ocurrido un error inesperado.
+
+    if error
+      p Detalles del Error:
+      pre #{error} 
+
+    a(href="/") Volver al inicio
