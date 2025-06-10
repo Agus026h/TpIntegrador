@@ -1,10 +1,10 @@
 const db = require('../config/db');
-const camaUtils = require('../models/camaUtils.js'); 
+const camaUtils = require('../models/camaUtils.js');
 
 
 async function renderAdmisionFormWithError(req, res, errorMessages, paciente = null, linkRegistroPaciente = null) {
     let pacienteRecuperado = paciente;
-    
+
     if (!pacienteRecuperado && req.body.dni) {
         try {
             pacienteRecuperado = await db.Paciente.findOne({ where: { dni: req.body.dni } });
@@ -13,13 +13,11 @@ async function renderAdmisionFormWithError(req, res, errorMessages, paciente = n
         }
     }
 
-    
     let camasDisponibles = [];
     try {
         camasDisponibles = await camaUtils.getCamasDisponibles();
     } catch (err) {
         console.error('Error al cargar camas disponibles para re-renderizar el formulario:', err);
-        
     }
 
     res.status(400).render('admision/nueva_admision', {
@@ -27,32 +25,30 @@ async function renderAdmisionFormWithError(req, res, errorMessages, paciente = n
         error: errorMessages.join('<br>'),
         linkRegistroPaciente: linkRegistroPaciente,
         paciente: pacienteRecuperado,
-        camasDisponibles: camasDisponibles, 
+        camasDisponibles: camasDisponibles,
         formData: req.body
     });
 }
 
 
-
 async function mostrarFormularioNuevaAdmision(req, res) {
     try {
-        console.log('DEBUG: Entrando a mostrarFormularioNuevaAdmision.'); 
+        console.log('DEBUG: Entrando a mostrarFormularioNuevaAdmision.');
         const camasDisponibles = await camaUtils.getCamasDisponibles();
-        console.log('DEBUG: Camas disponibles cargadas:', camasDisponibles.length); 
+        console.log('DEBUG: Camas disponibles cargadas:', camasDisponibles.length);
         res.render('admision/nueva_admision', {
             titulo: 'Nueva Admisión de Paciente',
             paciente: null,
             camasDisponibles: camasDisponibles,
             formData: {}
         });
-        console.log('DEBUG: Formulario de admisión renderizado.'); 
+        console.log('DEBUG: Formulario de admisión renderizado.');
     } catch (error) {
-        console.error('ERROR CRÍTICO en mostrarFormularioNuevaAdmision:', error); 
-        res.status(500).send('Error interno del servidor al cargar el formulario de admisión.'); 
+        console.error('ERROR CRÍTICO en mostrarFormularioNuevaAdmision:', error);
+        res.status(500).send('Error interno del servidor al cargar el formulario de admisión.');
     }
 }
-
-
+// Buscar un paciente por DNI
 async function buscarPacientePorDNI(req, res) {
     let { dni } = req.body;
     let paciente = null;
@@ -70,7 +66,6 @@ async function buscarPacientePorDNI(req, res) {
         error = 'Error al buscar paciente.';
     }
 
-    
     let camasDisponibles = [];
     try {
         camasDisponibles = await camaUtils.getCamasDisponibles();
@@ -84,12 +79,12 @@ async function buscarPacientePorDNI(req, res) {
         paciente: paciente,
         error: error,
         linkRegistroPaciente: linkRegistroPaciente,
-        camasDisponibles: camasDisponibles, 
-        formData: req.body 
+        camasDisponibles: camasDisponibles,
+        formData: req.body
     });
 }
 
-
+// Crear una nueva admision
 async function crearNuevaAdmision(req, res, next) {
     let {
         dni, id_cama, motivo, tipo_ingreso
@@ -108,8 +103,7 @@ async function crearNuevaAdmision(req, res, next) {
 
         if (!paciente) {
             console.log('ERROR: Paciente no encontrado, lanzando error para re-renderizar.');
-            await transaction.rollback(); 
-            
+            await transaction.rollback();
             return renderAdmisionFormWithError(req, res, ['Paciente no encontrado para la admisión. Regístrelo primero.'], null, '/pacientes/nuevo');
         }
 
@@ -139,8 +133,70 @@ async function crearNuevaAdmision(req, res, next) {
             await transaction.rollback();
         }
 
-        
         await renderAdmisionFormWithError(req, res, [error.message || 'Error al procesar la admisión. Por favor, revise los datos.']);
+    }
+}
+
+
+async function mostrarAdmisionesActivas(req, res) {
+    try {
+        const mensajeExito = req.query.exito ? 'Admisión registrada exitosamente.' : null;
+
+        const rawAdmisiones = await db.Admision.findAll({
+            where: {
+                estado: 'activa'
+            },
+            include: [
+                {
+                    model: db.Paciente,
+                    as: 'paciente'
+                },
+                {
+                    model: db.Cama,
+                    as: 'cama',
+                    include: [
+                        {
+                            model: db.Habitacion,
+                            as: 'habitacion',
+                            include: [
+                                {
+                                    model: db.Ala,
+                                    as: 'ala'
+                                }
+                            ]
+                        }
+                    ]
+                }
+                
+            ],
+            order: [['fecha', 'DESC']]
+        });
+
+        const admisionesParaVista = rawAdmisiones.map(admision => {
+            return {
+                id_admision: admision.id_admision,
+                paciente_nombre: admision.paciente ? admision.paciente.nombre : 'N/A',
+                paciente_apellido: admision.paciente ? admision.paciente.apellido : 'N/A',
+                paciente_dni: admision.paciente ? admision.paciente.dni : 'N/A',
+                numero_cama: admision.cama ? admision.cama.numero : 'N/A',
+                numero_habitacion: admision.cama && admision.cama.habitacion ? admision.cama.habitacion.numero : 'N/A',
+                nombre_ala: admision.cama && admision.cama.habitacion && admision.cama.habitacion.ala ? admision.cama.habitacion.ala.nombre : 'N/A',
+                fecha_ingreso: admision.fecha,
+                motivo_internacion: admision.motivo,
+                
+                tipo_ingreso: admision.tipo_ingreso
+            };
+        });
+
+        res.render('admision/lista_admisiones', { 
+            titulo: 'Admisiones Activas',
+            admisiones: admisionesParaVista,
+            mensajeExito: mensajeExito
+        });
+
+    } catch (error) {
+        console.error('ERROR al mostrar admisiones activas:', error);
+        res.status(500).send('Error interno del servidor al cargar las admisiones activas.');
     }
 }
 
@@ -148,5 +204,6 @@ async function crearNuevaAdmision(req, res, next) {
 module.exports = {
     mostrarFormularioNuevaAdmision,
     buscarPacientePorDNI,
-    crearNuevaAdmision
+    crearNuevaAdmision,
+    mostrarAdmisionesActivas 
 };

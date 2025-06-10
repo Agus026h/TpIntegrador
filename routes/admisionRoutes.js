@@ -9,6 +9,8 @@ router.get('/nueva', admisionController.mostrarFormularioNuevaAdmision);
 
 router.post('/buscar-paciente', admisionController.buscarPacientePorDNI);
 
+router.get('/activas', admisionController.mostrarAdmisionesActivas);
+
 
 router.post('/nueva', validateAdmision, admisionController.crearNuevaAdmision);
 
