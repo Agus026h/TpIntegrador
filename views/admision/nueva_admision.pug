@@ -1,0 +1,68 @@
+extends ../layout.pug
+
+block content
+  .container
+    h1 Nueva Admisión de Paciente
+
+    if error
+      .alert.alert-danger
+        | #{error}
+        if linkRegistroPaciente 
+          a(href=linkRegistroPaciente) aquí para registrarlo.
+
+    // Formulario de Busqueda de Paciente
+    form.mb-4(action="/admisiones/buscar-paciente", method="POST")
+      .mb-3
+        label.form-label(for="dniSearch") DNI del Paciente:
+        input.form-control(type="text", id="dniSearch", name="dni", value=(formData && formData.dni) ? formData.dni : '', required)
+      button.btn.btn-primary(type="submit") Buscar Paciente
+
+
+
+    
+    if paciente || (formData.dni && !error && !linkRegistroPaciente)
+      form(action="/admisiones/nueva", method="POST") // Este formulario ahora solo para Admisión
+        
+        input(type="hidden", name="dni", value=paciente ? paciente.dni : (formData && formData.dni ? formData.dni : ''))
+
+        .card.mb-3
+          .card-header Datos del Paciente (Solo lectura)
+          .card-body
+            .mb-3
+              label.form-label DNI:
+              input.form-control(type="text", value=paciente ? paciente.dni : (formData && formData.dni ? formData.dni : ''), readonly)
+            .mb-3
+              label.form-label Nombre:
+              input.form-control(type="text", value=paciente ? paciente.nombre : '', readonly)
+            .mb-3
+              label.form-label Apellido:
+              input.form-control(type="text", value=paciente ? paciente.apellido : '', readonly)
+            
+
+        .card.mb-3
+          .card-header Datos de la Admisión
+          .card-body
+            .mb-3
+              label.form-label(for="id_cama") Cama (requerido):
+              select.form-select(id="id_cama", name="id_cama", required)
+                option(value="") Seleccionar Cama
+                each cama in camasDisponibles
+                  option(value=cama.id_cama, selected=(formData && formData.id_cama == cama.id_cama))= `Cama #${cama.numero} - Hab. ${cama.habitacion.numero} - Ala ${cama.habitacion.ala.nombre}`
+            .mb-3
+              label.form-label(for="motivo") Motivo de Admisión (requerido):
+              textarea.form-control(id="motivo", name="motivo", rows="3", required)= (formData && formData.motivo) ? formData.motivo : ''
+            .mb-3
+              label.form-label(for="tipo_ingreso") Tipo de Ingreso (requerido):
+              select.form-select(id="tipo_ingreso", name="tipo_ingreso", required)
+                option(value="") Seleccionar Tipo
+                option(value="emergencia", selected=(formData && formData.tipo_ingreso === 'emergencia')) Emergencia
+                option(value="programada", selected=(formData && formData.tipo_ingreso === 'programada')) Programada
+                option(value="derivada", selected=(formData && formData.tipo_ingreso === 'derivada')) Derivada
+
+          button.btn.btn-primary(type="submit") Registrar Admisión
+
+    else if !error && !paciente && !formData.dni
+      p.text-info Por favor, busque un paciente por DNI o regístrelo si es nuevo.
+
+    p.mt-3
+      a(href="/") Volver al inicio

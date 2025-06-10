@@ -1,0 +1,38 @@
+extends ../layout.pug
+
+block content
+  h1= titulo
+
+  if admisiones && admisiones.length > 0
+    table.data-table
+      thead
+        tr
+          th Admisión ID
+          th Paciente
+          th DNI
+          th Ubicación
+          th Ingreso
+          th Motivo
+          th Registrado por
+          th Acciones
+      tbody
+        each admision in admisiones
+          tr
+            td #{admision.id_admision}
+            td #{admision.paciente_nombre} #{admision.paciente_apellido}
+            td #{admision.paciente_dni}
+            td
+              if admision.numero_cama
+                | #{admision.nombre_ala} - Hab: #{admision.numero_habitacion} - Cama: #{admision.numero_cama}
+              else
+                | Sin asignar
+            td #{admision.fecha_ingreso ? admision.fecha_ingreso.toLocaleString() : 'N/A'}
+            td #{admision.motivo_internacion}
+            td #{admision.personal_nombre} #{admision.personal_apellido}
+            td
+              form(action="/admisiones/" + admision.id_admision + "/cancelar", method="POST")
+                button.button.danger(type="submit", onclick="return confirm('¿Está seguro de cancelar esta admisión? Esto liberará la cama si está asignada.');") Cancelar
+
+  else
+    .message.info
+      p No hay admisiones activas en este momento.
