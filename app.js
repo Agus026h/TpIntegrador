@@ -1,87 +1,64 @@
-
 const express = require('express');
-const path = require('path'); 
-const { sequelize } = require('./models');
+const path = require('path');
+const db = require('./config/db'); 
 const app = express();
 const port = 3000;
 
+// Importar middlewares
+const notFoundHandler = require('./middlewares/notFoundHandler');
+const errorHandler = require('./middlewares/errorHandler');
 
+// Importar rutas
+const admisionRoutes = require('./routes/admisionRoutes');
+const pacienteRoutes = require('./routes/pacienteRoutes'); 
+
+// Configuración de Pug
 app.set('view engine', 'pug');
-
-
 app.set('views', path.join(__dirname, 'views'));
 
+// Middlewares de Express
+app.use(express.json()); 
+app.use(express.urlencoded({ extended: true })); // 
+app.use(express.static(path.join(__dirname, 'public'))); 
 
-app.use(express.static(path.join(__dirname, 'public')));
+// Montar las rutas
+app.use('/admisiones', admisionRoutes);
+app.use('/pacientes', pacienteRoutes); 
 
 
-
-// Ruta para la página de inicio (Home)
 app.get('/', (req, res) => {
-   
     const datosPaginaInicio = {
-        titulo: '',
-        mensajeBienvenida: '¡Bienvenido a la página de inicio de HIS!',
-        nombreUsuario: 'Paciente'
+        titulo: 'Sistema de Gestión Hospitalaria',
+        mensajeBienvenida: '¡Bienvenido a la página de inicio!',
+        nombreUsuario: 'Usuario' 
     };
-    
     res.render('index', datosPaginaInicio);
 });
 
 
 app.get('/acerca', (req, res) => {
-    
     const datosPaginaAcerca = {
         titulo: 'Acerca de Nosotros',
-        descripcion: 'Somos una institucion hospitalaria ficticia dedicada a brindar atencion de calidad.',
+        descripcion: 'Somos una institución hospitalaria ficticia dedicada a brindar atención de calidad a nuestros pacientes.',
         anioFundacion: 2023
     };
-    
     res.render('acerca', datosPaginaAcerca);
 });
 
 
-app.get('/admisiones/nueva', (req, res) => {
-    
-    res.render('admision/nueva_admision', {
-        titulo: 'Formulario de Nueva Admision',
-        error: null,
-        paciente: null, 
-        camasDisponibles: [] 
-    });
-});
+app.use(notFoundHandler);
 
 
-app.get('/admisiones/activas', (req, res) => {
-    
-    res.render('admision/lista_admisiones', {
-        titulo: 'Lista de Admisiones (Vista Previa)',
-        admisiones: [] 
-    });
-});
+app.use(errorHandler);
 
-
-
-
-sequelize.sync({forse: false})
-    .then(()=>{
-    console.log('conexion a la bd establecida');
-    //iniciamos el server
-    app.listen(port, () => {
-    console.log(`Servidor Express escuchando en http://localhost:${port}`);
-    console.log(`pgina de inicio en http://localhost:${port}`);
-    
-    console.log(`Previsualizar el formulario de admisión en http://localhost:${port}/admisiones/nueva`);
-    console.log(`Previsualizar la lista de admisiones en http://localhost:${port}/admisiones/activas`);
-    });
-
-
+// Sincronizar modelos con la base de datos y arrancar el servidor
+db.sequelize.sync({ force: false }) 
+    .then(() => {
+        console.log('Base de datos sincronizada.');
+        app.listen(port, () => {
+            console.log(`Servidor escuchando en http://localhost:${port}`);
+        });
     })
-    .catch(err =>{
-    console.error('error al acceder a la base de datos')
-
-
+    .catch(err => {
+        console.error('Error al sincronizar la base de datos:', err);
     });
-
-
-
