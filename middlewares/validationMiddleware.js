@@ -1,5 +1,5 @@
 const db = require('../config/db');
-const camaUtils = require('../models/camaUtils');
+const camaUtils = require('../models/camaUtils'); 
 
 
 async function renderAdmisionFormWithError(req, res, errorMessages, paciente = null, linkRegistroPaciente = null) {
@@ -8,7 +8,7 @@ async function renderAdmisionFormWithError(req, res, errorMessages, paciente = n
         try {
             pacienteRecuperado = await db.Paciente.findOne({ where: { dni: req.body.dni } });
         } catch (err) {
-            console.error('Error al intentar recuperar paciente para re-renderizar formulario:', err);
+            console.error('Error al intentar recuperar paciente para re-renderizar formulario (Admision):', err);
         }
     }
 
@@ -16,7 +16,7 @@ async function renderAdmisionFormWithError(req, res, errorMessages, paciente = n
     try {
         camasDisponibles = await camaUtils.getCamasDisponibles();
     } catch (err) {
-        console.error('Error al cargar camas disponibles para re-renderizar el formulario:', err);
+        console.error('Error al cargar camas disponibles para re-renderizar el formulario (Admision):', err);
     }
 
     res.status(400).render('admision/nueva_admision', {
@@ -30,22 +30,66 @@ async function renderAdmisionFormWithError(req, res, errorMessages, paciente = n
 }
 
 
+function renderPacienteFormWithError(req, res, errors, formType = 'nuevo_paciente', pacienteData = null) {
+    const tituloMap = {
+        'nuevo_paciente': 'Registrar Nuevo Paciente',
+        'modificar_paciente': 'Editar Datos de Paciente'
+    };
+    const titulo = tituloMap[formType] || 'Error en Formulario';
 
-function validatePaciente(req, res, next) {
+    
+    let paciente = pacienteData;
+    if (formType === 'modificar_paciente' && !pacienteData && req.params.id) {
+        
+        db.Paciente.findByPk(req.params.id)
+            .then(foundPaciente => {
+                paciente = foundPaciente;
+                res.status(400).render(`paciente/${formType}`, {
+                    titulo: titulo,
+                    error: errors.join('<br>'),
+                    paciente: paciente, 
+                    formData: req.body 
+                });
+            })
+            .catch(err => {
+                console.error('Error recuperando paciente para re-renderizar el formulario de modificación:', err);
+              
+                res.status(500).render('error', {
+                    titulo: 'Error Interno',
+                    error: 'Error al procesar los datos y cargar el formulario de edición.'
+                });
+            });
+    } else {
+        res.status(400).render(`paciente/${formType}`, {
+            titulo: titulo,
+            error: errors.join('<br>'),
+            paciente: paciente, 
+            formData: req.body 
+        });
+    }
+}
+
+
+// validatePaciente: Este middleware valida los campos comunes de un paciente
+async function validatePaciente(req, res, next) {
     const { dni, nombre, apellido, fecha_nacimiento, sexo, email } = req.body;
     let errors = [];
 
-    if (!dni || dni.length < 7) {
-        errors.push('DNI es requerido y debe tener al menos 7 dígitos.');
+    
+    const isModifying = req.originalUrl.includes('/modificar/'); 
+    const formView = isModifying ? 'modificar_paciente' : 'nuevo_paciente';
+
+    if (!dni || dni.toString().length < 7 || isNaN(parseInt(dni))) { 
+        errors.push('DNI es requerido, debe ser numérico y tener al menos 7 dígitos.');
     }
-    if (!nombre) {
+    if (!nombre || nombre.trim() === '') {
         errors.push('Nombre es un campo obligatorio.');
     }
-    if (!apellido) {
+    if (!apellido || apellido.trim() === '') {
         errors.push('Apellido es un campo obligatorio.');
     }
     if (!fecha_nacimiento) {
-        errors.push('Fecha de Nacimiento es un campo obligatorio y debe ser una fecha válida.');
+        errors.push('Fecha de Nacimiento es un campo obligatorio.');
     } else {
         try {
             const date = new Date(fecha_nacimiento);
@@ -66,18 +110,21 @@ function validatePaciente(req, res, next) {
 
     if (errors.length > 0) {
         console.log('ValidationPaciente errors:', errors);
-        // Utiliza la función auxiliar para re-renderizar el formulario en caso de error
-        // Aquí deberías re-renderizar un formulario de paciente, no de admisión,
-        // o si es la misma vista, asegúrate que renderAdmisionFormWithError maneja bien esto.
-        // Pero idealmente, esta validación se usa en /pacientes/nuevo.
-        // Por simplicidad, si es el mismo form, se reusa la función:
-        return renderAdmisionFormWithError(req, res, errors);
+        
+        let pacienteData = null;
+        if (isModifying && req.params.id) {
+             pacienteData = await db.Paciente.findByPk(req.params.id).catch(e => {
+                console.error("Error al recuperar paciente para re-renderizar en validación:", e);
+                return null;
+            });
+        }
+        return renderPacienteFormWithError(req, res, errors, formView, pacienteData);
     }
     next();
 }
 
 
-// validateAdmision: Este middleware valida solo los campos de la admisión.
+
 async function validateAdmision(req, res, next) {
     const { id_cama, motivo, tipo_ingreso } = req.body;
     let errors = [];
@@ -95,12 +142,13 @@ async function validateAdmision(req, res, next) {
 
     if (errors.length > 0) {
         console.log('ValidationAdmision errors:', errors);
+        
         return renderAdmisionFormWithError(req, res, errors);
     }
     next();
 }
 
 module.exports = {
-    validatePaciente, // <-- Ahora sí existe esta función
+    validatePaciente,
     validateAdmision
 };
