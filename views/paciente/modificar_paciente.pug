@@ -1,0 +1,58 @@
+extends ../layout.pug
+
+block content
+  .container
+    h1 #{titulo}
+
+    if error
+      .alert.alert-danger #{error}
+
+    form(action=`/pacientes/modificar/${paciente.id_paciente}`, method="POST")
+      fieldset.mb-4
+        legend Datos Personales del Paciente
+        // El ID del paciente se pasa oculto
+        input(type="hidden", name="id_paciente", value=paciente.id_paciente)
+
+        .mb-3
+          label.form-label(for="dni") DNI (requerido):
+          input.form-control(type="text", id="dni", name="dni", value=formData.dni, required)
+        .mb-3
+          label.form-label(for="nombre") Nombre (requerido):
+          input.form-control(type="text", id="nombre", name="nombre", value=formData.nombre, required)
+        .mb-3
+          label.form-label(for="apellido") Apellido (requerido):
+          input.form-control(type="text", id="apellido", name="apellido", value=formData.apellido, required)
+        .mb-3
+          label.form-label(for="fecha_nacimiento") Fecha de Nacimiento (requerido):
+          // Formato para input type="date": "YYYY-MM-DD"
+          input.form-control(type="date", id="fecha_nacimiento", name="fecha_nacimiento", value=formData.fecha_nacimiento ? new Date(formData.fecha_nacimiento).toISOString().split('T')[0] : '', required)
+        .mb-3
+          label.form-label(for="sexo") Sexo (requerido):
+          select.form-select(id="sexo", name="sexo", required)
+            option(value="") Seleccionar
+            option(value="m", selected=formData.sexo === 'm') Masculino
+            option(value="f", selected=formData.sexo === 'f') Femenino
+            option(value="otro", selected=formData.sexo === 'otro') Otro
+        .mb-3
+          label.form-label(for="direccion") Dirección:
+          input.form-control(type="text", id="direccion", name="direccion", value=formData.direccion || '')
+        .mb-3
+          label.form-label(for="telefono") Teléfono:
+          input.form-control(type="text", id="telefono", name="telefono", value=formData.telefono || '')
+        .mb-3
+          label.form-label(for="email") Email (requerido):
+          input.form-control(type="email", id="email", name="email", value=formData.email, required)
+        .mb-3
+          label.form-label(for="contacto_emergencia") Contacto de Emergencia (Nombre y Teléfono):
+          input.form-control(type="text", id="contacto_emergencia", name="contacto_emergencia", value=formData.contacto_emergencia || '')
+        .mb-3
+          label.form-label(for="estado") Estado (Activo):
+          input.form-check-input(type="checkbox", id="estado", name="estado", checked=(formData.estado === true || formData.estado === 'true'))
+          small.form-text.text-muted  Marcar si el paciente esta activo.
+
+      button.btn.btn-success.mt-3(type="submit") Guardar Cambios
+
+    p.mt-3
+      a(href="/pacientes/modificar") Volver a buscar otro paciente
+      span &nbsp;|&nbsp;
+      a(href="/") Volver al inicio

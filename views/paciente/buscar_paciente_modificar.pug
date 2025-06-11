@@ -1,0 +1,34 @@
+extends ../layout.pug
+
+block content
+  .container
+    h1 #{titulo}
+
+    if mensajeExito
+      .alert.alert-success #{mensajeExito}
+
+    if error
+      .alert.alert-danger #{error}
+
+    h2 Buscar Paciente por DNI
+    form.mb-4(action="/pacientes/modificar/buscar", method="POST")
+      .mb-3
+        label.form-label(for="dni") DNI del Paciente:
+        input.form-control(type="text", id="dni", name="dni", value=(formData && formData.dni) ? formData.dni : '', placeholder="Ingrese DNI", required)
+      button.btn.btn-primary(type="submit") Buscar Paciente
+
+    if pacienteEncontrado
+      hr
+      h2 Paciente Encontrado:
+      .card.mb-3
+        .card-body
+          h5.card-title #{pacienteEncontrado.nombre} #{pacienteEncontrado.apellido}
+          p.card-text DNI: #{pacienteEncontrado.dni}
+          p.card-text Email: #{pacienteEncontrado.email}
+          p.card-text Teléfono: #{pacienteEncontrado.telefono || 'N/A'}
+          a.btn.btn-warning.mt-2(href=`/pacientes/modificar/${pacienteEncontrado.id_paciente}`) Modificar este Paciente
+    else if formData.dni && !error
+      .alert.alert-info No se encontro ningun paciente con el DNI #{formData.dni}.
+
+    p.mt-3
+      a(href="/") Volver al inicio
