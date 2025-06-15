@@ -1,0 +1,48 @@
+extends ../layout.pug
+
+block content
+  .container
+    h1 Listado de Pacientes
+
+    if mensajeExito
+      .alert.alert-success #{mensajeExito}
+    if error
+      .alert.alert-danger #{error}
+
+    .row.mb-3
+      .col-md-6.col-12
+      .col-md-6.col-12.text-md-end
+        
+
+    if pacientes && pacientes.length > 0
+      .table-responsive
+        table.table.table-striped.table-hover.data-table
+          thead
+            tr
+              th DNI
+              th Nombre
+              th Apellido
+              th Fecha Nac.
+              th Sexo
+              th Email
+              th Acciones
+          tbody
+            each paciente in pacientes
+              tr
+                td= paciente.dni
+                td= paciente.nombre
+                td= paciente.apellido
+                td= paciente.fecha_nacimiento ? new Date(paciente.fecha_nacimiento).toLocaleDateString('es-AR') : 'N/A'
+                td= paciente.sexo === 'm' ? 'Masculino' : (paciente.sexo === 'f' ? 'Femenino' : 'Otro')
+                td= paciente.email
+                td
+                  .d-flex.gap-2 
+                    a.btn.btn-sm.btn-info(href=`/pacientes/detalle/${paciente.id_paciente}`, title="Ver Detalle") Ver    /
+                    a.btn.btn-sm.btn-warning(href=`/pacientes/modificar/${paciente.id_paciente}`, title="Modificar") Modificar
+                    form(action=`/pacientes/eliminar/${paciente.id_paciente}`, method="POST", onsubmit="return confirm('Esta seguro de que desea eliminar este paciente?');")
+                      button.btn.btn-sm.btn-danger(type="submit", title="Eliminar") Eliminar
+    else
+      .alert.alert-info No hay pacientes registrados en el sistema.
+
+    p.mt-3
+      a(href="/") Volver al inicio

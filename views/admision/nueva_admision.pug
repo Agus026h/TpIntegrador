@@ -3,14 +3,15 @@ extends ../layout.pug
 block content
   .container
     h1 Nueva Admisión de Paciente
-
+    #message-container
     if error
       .alert.alert-danger
         | #{error}
         if linkRegistroPaciente 
           a(href=linkRegistroPaciente) aquí para registrarlo.
-
+    
     // Formulario de Busqueda de Paciente
+   
     form.mb-4(action="/admisiones/buscar-paciente", method="POST")
       .mb-3
         label.form-label(for="dniSearch") DNI del Paciente:

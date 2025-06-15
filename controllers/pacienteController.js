@@ -202,11 +202,115 @@ async function modificarPaciente(req, res) {
     }
 }
 
+
+
+async function getAllPacientes(req, res, next) {
+    try {
+        const pacientes = await db.Paciente.findAll({
+            
+            order: [['apellido', 'ASC'], ['nombre', 'ASC']]
+        });
+
+        
+        const mensajeExito = req.flash('mensajeExito');
+        const error = req.flash('error');
+
+        res.render('pacientes/ver_pacientes', {
+            titulo: 'Listado de Pacientes',
+            pacientes: pacientes,
+            mensajeExito: mensajeExito.length ? mensajeExito[0] : null,
+            error: error.length ? error[0] : null 
+        });
+    } catch (err) {
+        console.error('Error al obtener pacientes para el listado:', err);
+        
+        req.flash('error', 'No se pudieron cargar los pacientes. Intente de nuevo mas tarde.');
+       
+    }
+}
+
+
+async function listarPacientes(req, res, next) {
+    try {
+        const pacientes = await db.Paciente.findAll({
+            where: {
+                estado: true 
+            },
+            order: [['apellido', 'ASC'], ['nombre', 'ASC']]
+        });
+
+        const mensajeExito = req.query.exito ? decodeURIComponent(req.query.exito) : null;
+        const error = req.query.error ? decodeURIComponent(req.query.error) : null;
+
+        res.render('paciente/ver_pacientes', {
+            titulo: 'Listado de Pacientes',
+            pacientes: pacientes,
+            mensajeExito: mensajeExito,
+            error: error
+        });
+    } catch (err) {
+        console.error('Error al obtener pacientes para el listado:', err);
+        const errorMessage = encodeURIComponent('No se pudieron cargar los pacientes. Intente de nuevo mas tarde.');
+        res.redirect(`/?error=${errorMessage}`); // Redirige al inicio con el error
+    }
+}
+
+
+async function desactivarPaciente(req, res) { 
+    try {
+        const id_paciente = req.params.id;
+
+        const paciente = await db.Paciente.findByPk(id_paciente);
+
+        if (!paciente) {
+            const errorMessage = encodeURIComponent('Paciente no encontrado para desactivar.');
+            return res.redirect(`/pacientes?error=${errorMessage}`);
+        }
+
+        paciente.estado = false; // Cambiar el estado a inactivo
+        await paciente.save();
+
+        const successMessage = encodeURIComponent('Paciente desactivado exitosamente.');
+        res.redirect(`/pacientes?exito=${successMessage}`);
+    } catch (err) {
+        console.error('Error al desactivar paciente:', err);
+        const errorMessage = encodeURIComponent('Error al desactivar el paciente. Intente de nuevo más tarde.');
+        res.redirect(`/pacientes?error=${errorMessage}`);
+    }
+}
+
+async function getPacienteById(req, res) {
+    try {
+        const id_paciente = req.params.id;
+        const paciente = await db.Paciente.findByPk(id_paciente);
+
+        if (!paciente) {
+            const errorMessage = encodeURIComponent('Paciente no encontrado.');
+            return res.redirect(`/pacientes?error=${errorMessage}`);
+        }
+        res.render('pacientes/buscar_paciente_modificar', {
+            titulo: 'Detalle del Paciente',
+            paciente: paciente,
+            mensajeExito: req.query.exito ? decodeURIComponent(req.query.exito) : null,
+            error: req.query.error ? decodeURIComponent(req.query.error) : null
+        });
+    } catch (err) {
+        console.error('Error al obtener detalle del paciente:', err);
+        const errorMessage = encodeURIComponent('Error al cargar el detalle del paciente.');
+        res.redirect(`/pacientes?error=${errorMessage}`);
+    }
+}
+
+
+
 module.exports = {
     mostrarFormularioNuevoPaciente,
     crearNuevoPaciente,
     mostrarFormularioBuscarPacienteModificar,
     buscarPacienteParaModificar,
     mostrarFormularioModificarPaciente,
-    modificarPaciente
+    modificarPaciente,
+    listarPacientes,
+    desactivarPaciente, 
+    getPacienteById 
 };
