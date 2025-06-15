@@ -13,7 +13,7 @@ block content
           th Ubicación
           th Ingreso
           th Motivo
-          th Registrado por
+          
           th Acciones
       tbody
         each admision in admisiones
@@ -28,10 +28,13 @@ block content
                 | Sin asignar
             td #{admision.fecha_ingreso ? admision.fecha_ingreso.toLocaleString() : 'N/A'}
             td #{admision.motivo_internacion}
-            td #{admision.personal_nombre} #{admision.personal_apellido}
+            
             td
-              form(action="/admisiones/" + admision.id_admision + "/cancelar", method="POST")
-                button.button.danger(type="submit", onclick="return confirm('¿Está seguro de cancelar esta admisión? Esto liberará la cama si está asignada.');") Cancelar
+                form(action="/admisiones/" + admision.id_admision + "/cancelar", method="POST" style="display:inline;")
+                  button.button.danger(type="submit", onclick="return confirm('Esta seguro de cancelar esta admision? Esto liberara la cama si esta asignada.');") Cancelar
+
+                form(action="/admisiones/" + admision.id_admision + "/finalizar", method="POST" style="display:inline; margin-left: 5px;")
+                  button.button.success(type="submit", onclick="return confirm('Esta seguro de finalizar esta admision? Esto marcara al paciente como dado de alta y liberara la cama.');") Finalizar
 
   else
     .message.info

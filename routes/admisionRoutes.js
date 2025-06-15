@@ -13,5 +13,7 @@ router.get('/activas', admisionController.mostrarAdmisionesActivas);
 
 
 router.post('/nueva', validateAdmision, admisionController.crearNuevaAdmision);
+router.post('/:id/cancelar', admisionController.cancelarAdmision);
+router.post('/:id/finalizar', admisionController.finalizarAdmision);
 
 module.exports = router;

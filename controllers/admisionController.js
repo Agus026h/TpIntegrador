@@ -200,10 +200,97 @@ async function mostrarAdmisionesActivas(req, res) {
     }
 }
 
+async function cancelarAdmision(req, res) {
+    const admisionId = req.params.id; 
+
+    try {
+        
+        await db.sequelize.transaction(async (t) => {
+            // Encontrar la admision
+            const admision = await db.Admision.findByPk(admisionId, { transaction: t });
+
+            if (!admision) {
+                
+                return res.redirect('/admisiones/activas?error=Admision no encontrada.');
+            }
+
+            
+            if (admision.estado !== 'activa') {
+                return res.redirect('/admisiones/activas?error=La admision ya no esta activa y no puede ser cancelada.');
+            }
+
+            
+            admision.estado = 'cancelada';
+            
+            admision.fecha_egreso = new Date();
+            await admision.save({ transaction: t });
+
+            //Liberar la cama asociada 
+            if (admision.id_cama) {
+                const cama = await db.Cama.findByPk(admision.id_cama, { transaction: t });
+                if (cama) {
+                    cama.estado = 'libre'; 
+                    await cama.save({ transaction: t });
+                }
+            }
+
+            
+            return res.redirect('/admisiones/activas?success=Admision ' + admisionId + ' cancelada exitosamente.');
+
+        });
+
+    } catch (error) {
+        console.error('Error al cancelar la admision:', error); 
+        return res.redirect('/admisiones/activas?error=Error al cancelar la admision. Por favor, intente de nuevo.');
+    }
+}
+
+
+
+async function finalizarAdmision(req, res) {
+    const admisionId = req.params.id;
+
+    try {
+        await db.sequelize.transaction(async (t) => {
+            const admision = await db.Admision.findByPk(admisionId, { transaction: t });
+
+            if (!admision) {
+                return res.redirect('/admisiones/activas?error=Admision no encontrada.');
+            }
+
+            if (admision.estado !== 'activa') {
+                return res.redirect('/admisiones/activas?error=La admision no esta activa y no puede ser finalizada.');
+            }
+
+            // Cambiar el estado a 'finalizada'
+            admision.estado = 'finalizada';
+            admision.fecha_egreso = new Date();
+
+            await admision.save({ transaction: t });
+
+            // Liberar la cama asociada
+            if (admision.id_cama) {
+                const cama = await db.Cama.findByPk(admision.id_cama, { transaction: t });
+                if (cama) {
+                    cama.estado = 'libre';
+                    await cama.save({ transaction: t });
+                }
+            }
+
+            return res.redirect('/admisiones/activas?success=Admision ' + admisionId + ' finalizada exitosamente.');
+        });
+
+    } catch (error) {
+        console.error('Error al finalizar la admisión:', error);
+        return res.redirect('/admisiones/activas?error=Error al finalizar la admision. Por favor, intente de nuevo.');
+    }
+}
 
 module.exports = {
     mostrarFormularioNuevaAdmision,
     buscarPacientePorDNI,
     crearNuevaAdmision,
-    mostrarAdmisionesActivas 
+    mostrarAdmisionesActivas,
+    cancelarAdmision,
+    finalizarAdmision
 };
