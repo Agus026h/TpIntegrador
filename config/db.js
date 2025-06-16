@@ -5,6 +5,10 @@ const fs = require('fs');
 
 dotenv.config(); 
 
+const db = {};
+const connectionString = process.env.DATABASE_URL;
+
+
 
 const DB_DATABASE = process.env.PGDATABASE || process.env.DB_DATABASE; 
 const DB_USER = process.env.PGUSER || process.env.DB_USER;
@@ -13,22 +17,44 @@ const DB_HOST = process.env.PGHOST || process.env.DB_HOST || 'localhost';
 const DB_PORT = process.env.PGPORT || process.env.DB_PORT || 5432; 
 const DB_DIALECT = 'postgres'; 
 
-const sequelize = new Sequelize(DB_DATABASE, DB_USER, DB_PASSWORD, {
-    host: DB_HOST,
-    port: DB_PORT,
-    dialect: DB_DIALECT, 
-    logging: console.log,
-    dialectOptions: {
-        
-        ssl: {
-            require: true, 
-            rejectUnauthorized: false 
-        }
-    },
-    timezone: '-03:00'
-});
+let sequelize; // <-- CAMBIO IMPORTANTE!
 
-const db = {};
+if (connectionString) { // <-- CAMBIO 
+    
+    sequelize = new Sequelize(connectionString, { 
+        dialect: 'postgres', // <-- CAMBIO 
+        logging: console.log, 
+        dialectOptions: {
+            ssl: {
+                require: true,
+                rejectUnauthorized: false 
+            }
+        },
+        timezone: '-03:00'
+    });
+} else {
+    
+    const DB_DATABASE = process.env.DB_DATABASE;
+    const DB_USER = process.env.DB_USER;
+    const DB_PASSWORD = process.env.DB_PASSWORD;
+    
+    const DB_HOST = process.env.DB_HOST || 'localhost';
+    const DB_PORT = process.env.DB_PORT || 5432; 
+
+    sequelize = new Sequelize(DB_DATABASE, DB_USER, DB_PASSWORD, {
+        host: DB_HOST,
+        port: DB_PORT,
+        dialect: 'postgres', 
+        logging: console.log,
+        dialectOptions: {
+            
+            ssl: false
+        },
+        timezone: '-03:00'
+    });
+}
+
+
 
 const modelsDir = path.join(__dirname, '../models');
 
