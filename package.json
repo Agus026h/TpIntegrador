@@ -1,9 +1,20 @@
 {
+
+  "version": "1.0.0", 
+  "description": "primera entrega de tp", 
+  "main": "app.js", 
+  "scripts": {
+    "start": "node app.js" 
+  },
+
+
+  
   "dependencies": {
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "pg": "^8.11.5",
     "pug": "^3.0.3",
     "sequelize": "^6.37.7"
+    
   }
 }
