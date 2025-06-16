@@ -224,7 +224,7 @@ async function getAllPacientes(req, res, next) {
     } catch (err) {
         console.error('Error al obtener pacientes para el listado:', err);
         
-        req.flash('error', 'No se pudieron cargar los pacientes. Intente de nuevo mas tarde.');
+        
        
     }
 }
