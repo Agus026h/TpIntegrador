@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 const db = require('./config/db'); 
 const app = express();
-const port = 3000;
+
 
 // Importar middlewares
 const notFoundHandler = require('./middlewares/notFoundHandler');
@@ -52,13 +52,16 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // Sincronizar modelos con la base de datos y arrancar el servidor
-db.sequelize.sync({ force: false }) 
+
+db.testConnection()
     .then(() => {
-        console.log('Base de datos sincronizada.');
+        
+        const port = process.env.PORT || 3000;
         app.listen(port, () => {
             console.log(`Servidor escuchando en http://localhost:${port}`);
         });
     })
     .catch(err => {
-        console.error('Error al sincronizar la base de datos:', err);
+        console.error('La aplicacion no pudo arrancar debido a un error de base de datos:', err);
+        process.exit(1); // Sale del proceso si no se puede conectar a la DB
     });
