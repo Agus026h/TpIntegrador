@@ -33,7 +33,7 @@ if (connectionString) {
     sequelize = new Sequelize(DB_DATABASE, DB_USER, DB_PASSWORD, {
         host: DB_HOST,
         port: DB_PORT,
-        dialect: 'postgres', 
+        dialect: 'mysql', 
         logging: console.log,
         dialectOptions: {
             ssl: false
