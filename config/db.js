@@ -68,7 +68,7 @@ async function testConnection() {
     try {
         await sequelize.authenticate();
         console.log('Conexión a PostgreSQL con Sequelize exitosa!');
-        await sequelize.sync({ alter: true }); // 
+        await sequelize.sync({ alter: false }); // 
         console.log('Modelos sincronizados con la base de datos.');
     } catch (error) {
         console.error('Error al conectar a la base de datos o sincronizar modelos:', error);
